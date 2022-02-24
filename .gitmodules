@@ -1,0 +1,3 @@
+[submodule "postgresb-image/postgres-json-schema"]
+	path = postgresb-image/postgres-json-schema
+	url = https://github.com/gavinwahl/postgres-json-schema.git

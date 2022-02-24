@@ -1,0 +1,36 @@
+version: "3.1"
+services:
+    postgresdb:
+        build: ./postgresb-image
+        image: postgresdb
+        container_name: postgresdb
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=sw55amp
+            - POSTGRES_DB=OBJECT_STORE
+        ports:
+            - "5432:5432"
+    postgress-service:
+        restart: always
+        build: ./
+        image: postgressdb-service
+        links:
+            - postgresdb
+        depends_on:
+            - postgresdb
+        ports:
+            - "8080:8080"
+        environment:
+            - spring.datasource.initialization-mode=always
+            - spring.r2dbc.url=r2dbc:postgresql://postgres@postgresdb:5432/OBJECT_STORE
+            - spring.r2dbc.username=postgres
+            - spring.r2dbc.password=sw55amp
+            - postgres.datasource.prefix=r2dbc:postgresql://
+            - postgres.datasource.host=localhost
+            - postgres.datasource.port=5432
+            - postgres.datasource.database=OBJECT_STORE
+            - postgres.datasource.username=postgres
+networks:
+    default:
+        external:
+            name: network-object-store
