@@ -11,24 +11,27 @@ import reactor.core.publisher.Mono;
 @Service
 public record TypeService(TypeDao typeDao, TypeMapper mapper) {
 
-  public Mono<Type> getById(UUID id){
+  public Mono<Type> getById(UUID id) {
     return typeDao.getById(id).map(mapper::dtoToApi);
   }
 
-  public Mono<Type> getByName(String name) { return typeDao.getByName(name).map(mapper::dtoToApi);}
-  public Mono<Flux<Type>> getAll(){
+  public Mono<Type> getByName(String name) {
+    return typeDao.getByName(name).map(mapper::dtoToApi);
+  }
+
+  public Mono<Flux<Type>> getAll() {
     return Mono.just(typeDao.getAll().map(mapper::dtoToApi));
   }
 
-  public Mono<Type> createType(Type document){
+  public Mono<Type> createType(Type document) {
     return typeDao.createType(mapper.apiToDto(document)).map(mapper::dtoToApi);
   }
 
-  public Mono<Type> updateById(Type document){
+  public Mono<Type> updateById(Type document) {
     return typeDao.updateTypeById(mapper.apiToDto(document)).map(mapper::dtoToApi);
   }
 
-  public Mono<Type> createTable(Type document){
+  public Mono<Type> createTable(Type document) {
     return typeDao.createTableForType(mapper.apiToDto(document)).map(mapper::dtoToApi);
   }
 }

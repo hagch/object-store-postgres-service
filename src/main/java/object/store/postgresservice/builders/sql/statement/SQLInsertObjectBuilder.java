@@ -1,7 +1,5 @@
 package object.store.postgresservice.builders.sql.statement;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
@@ -10,11 +8,8 @@ import org.apache.logging.log4j.util.Strings;
 
 public class SQLInsertObjectBuilder {
 
-  private final static String COMMA_DELIMITER = ",";
-  private final static String SPACE_DELIMITER = " ";
-
-  private String tableName;
   private final HashMap<String, String> keyValues;
+  private String tableName;
 
   SQLInsertObjectBuilder() {
     tableName = Strings.EMPTY;
@@ -26,15 +21,14 @@ public class SQLInsertObjectBuilder {
     return this;
   }
 
-  public SQLInsertObjectBuilder keyValue(String key,Object value) {
-    keyValues.put(key,Strings.quote(Objects.toString(value)));
+  public SQLInsertObjectBuilder keyValue(String key, Object value) {
+    keyValues.put(key, Strings.quote(Objects.toString(value)));
     return this;
   }
 
-  public SQLInsertObjectBuilder jsonValue(String key,Object value) throws JsonProcessingException {
+  public SQLInsertObjectBuilder jsonValue(String key, Object value) throws JsonProcessingException {
     ObjectMapper mapper = new ObjectMapper();
-    // mapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
-    keyValues.put(key,Strings.quote(mapper.writeValueAsString(value)));
+    keyValues.put(key, Strings.quote(mapper.writeValueAsString(value)));
     return this;
   }
 
@@ -42,6 +36,6 @@ public class SQLInsertObjectBuilder {
     String sqlTableStatement = tableName;
     String columns = String.join(",", keyValues.keySet());
     String values = String.join(",", keyValues.values());
-    return new SQLStatement(sqlTableStatement + columns + ") VALUES("+values+");");
+    return new SQLStatement(sqlTableStatement + columns + ") VALUES(" + values + ");");
   }
 }

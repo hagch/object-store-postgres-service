@@ -3,12 +3,12 @@ package object.store.postgresservice.entities;
 import java.io.Serializable;
 import java.util.Set;
 
-public class BackendKeyDefintionEntity implements Serializable {
+public class BackendKeyDefinitionEntity implements Serializable {
 
   private String key;
   private String type;
   private String primitiveArrayType;
-  private Set<BackendKeyDefintionEntity> properties;
+  private Set<BackendKeyDefinitionEntity> properties;
 
   public String getKey() {
     return key;
@@ -34,11 +34,11 @@ public class BackendKeyDefintionEntity implements Serializable {
     this.primitiveArrayType = primitiveArrayType;
   }
 
-  public Set<BackendKeyDefintionEntity> getProperties() {
+  public Set<BackendKeyDefinitionEntity> getProperties() {
     return properties;
   }
 
-  public void setProperties(Set<BackendKeyDefintionEntity> properties) {
+  public void setProperties(Set<BackendKeyDefinitionEntity> properties) {
     this.properties = properties;
   }
 }

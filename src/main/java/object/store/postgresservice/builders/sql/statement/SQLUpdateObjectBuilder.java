@@ -9,8 +9,8 @@ import org.apache.logging.log4j.util.Strings;
 
 public class SQLUpdateObjectBuilder {
 
-  private String statement;
   private final Set<String> values;
+  private String statement;
   private String primaryKey;
   private String primaryValue;
 

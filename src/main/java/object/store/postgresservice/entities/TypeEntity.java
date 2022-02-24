@@ -1,6 +1,5 @@
 package object.store.postgresservice.entities;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -8,10 +7,10 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
-import org.w3c.dom.stylesheets.LinkStyle;
 
 @Table("TYPE")
 public class TypeEntity implements Persistable<UUID> {
+
   @Id
   private UUID id;
 
@@ -21,21 +20,13 @@ public class TypeEntity implements Persistable<UUID> {
   private boolean additionalProperties;
 
   @Column("BACKEND_KEY_DEFINITIONS")
-  private Set<BackendKeyDefintionEntity> backendKeyDefinitions;
+  private Set<BackendKeyDefinitionEntity> backendKeyDefinitions;
 
-  public TypeEntity() {}
+  public TypeEntity() {
+  }
 
   public UUID getId() {
     return id;
-  }
-
-  @Override
-  public boolean isNew() {
-    if(Objects.isNull(this.id)){
-      this.id = UUID.randomUUID();
-      return true;
-    }
-    return false;
   }
 
   public void setId(UUID id) {
@@ -58,12 +49,21 @@ public class TypeEntity implements Persistable<UUID> {
     this.additionalProperties = additionalProperties;
   }
 
-  public Set<BackendKeyDefintionEntity> getBackendKeyDefinitions() {
+  public Set<BackendKeyDefinitionEntity> getBackendKeyDefinitions() {
     return backendKeyDefinitions;
   }
 
   public void setBackendKeyDefinitions(
-      Set<BackendKeyDefintionEntity> backendKeyDefinitions) {
+      Set<BackendKeyDefinitionEntity> backendKeyDefinitions) {
     this.backendKeyDefinitions = backendKeyDefinitions;
+  }
+
+  @Override
+  public boolean isNew() {
+    if (Objects.isNull(this.id)) {
+      this.id = UUID.randomUUID();
+      return true;
+    }
+    return false;
   }
 }

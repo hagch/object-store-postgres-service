@@ -11,10 +11,9 @@ public class SQLCreateTableBuilder {
 
   private final static String COMMA_DELIMITER = ",";
   private final static String SPACE_DELIMITER = " ";
-
-  private String tableName;
   private final Set<String> items;
   private final Set<String> constraints;
+  private String tableName;
   private String primaryKey;
 
   SQLCreateTableBuilder() {

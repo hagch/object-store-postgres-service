@@ -19,9 +19,10 @@ public class PostgresConfiguration extends AbstractR2dbcConfiguration {
 
   private final DatasourceProperties datasourceProps;
 
-  public PostgresConfiguration(DatasourceProperties datasourceProps){
+  public PostgresConfiguration(DatasourceProperties datasourceProps) {
     this.datasourceProps = datasourceProps;
   }
+
   @Override
   public ConnectionFactory connectionFactory() {
     return ConnectionFactories.get(datasourceProps.getPrefix() + datasourceProps.getUsername() + ":" +

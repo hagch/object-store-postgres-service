@@ -5,8 +5,8 @@ import org.apache.logging.log4j.util.Strings;
 
 public class SQLSelectObjectBuilder {
 
-  private String statement;
   private final HashMap<String, String> keyValues;
+  private String statement;
 
   SQLSelectObjectBuilder() {
     statement = Strings.EMPTY;
@@ -18,8 +18,9 @@ public class SQLSelectObjectBuilder {
     return this;
   }
 
-  public SQLSelectObjectBuilder byPrimaryKey(String key,String value) {
-    this.statement = this.statement.concat(" WHERE ").concat(Strings.dquote(key)).concat(" = ").concat(Strings.quote(value));
+  public SQLSelectObjectBuilder byPrimaryKey(String key, String value) {
+    this.statement = this.statement.concat(" WHERE ").concat(Strings.dquote(key)).concat(" = ")
+        .concat(Strings.quote(value));
     return this;
   }
 
