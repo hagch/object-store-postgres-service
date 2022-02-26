@@ -3,12 +3,13 @@ package object.store.postgresservice.builders.sql.statement;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import org.apache.logging.log4j.util.Strings;
 
 public class SQLInsertObjectBuilder {
 
-  private final HashMap<String, String> keyValues;
+  private final Map<String, String> keyValues;
   private String tableName;
 
   SQLInsertObjectBuilder() {
@@ -22,13 +23,13 @@ public class SQLInsertObjectBuilder {
   }
 
   public SQLInsertObjectBuilder keyValue(String key, Object value) {
-    keyValues.put(key, Strings.quote(Objects.toString(value)));
+    keyValues.put(Strings.dquote(key), Strings.quote(Objects.toString(value)));
     return this;
   }
 
   public SQLInsertObjectBuilder jsonValue(String key, Object value) throws JsonProcessingException {
     ObjectMapper mapper = new ObjectMapper();
-    keyValues.put(key, Strings.quote(mapper.writeValueAsString(value)));
+    keyValues.put(Strings.dquote(key), Strings.quote(mapper.writeValueAsString(value)));
     return this;
   }
 

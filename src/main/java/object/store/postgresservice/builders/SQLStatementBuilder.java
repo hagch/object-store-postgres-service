@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 @Service
 public record SQLStatementBuilder(ObjectMapper mapper) {
 
+  public static String ADDITIONAL_PROPERTIES_KEY = "additionalProperties";
+
   public SQLStatement createTable(TypeDto type) {
     SQLCreateTableBuilder builder = SQLStatement.createTableBuilder().name(type.getName());
     for (BackendKeyDefinitionDto keyDefinition : type.getBackendKeyDefinitionDtos()) {
@@ -37,14 +39,21 @@ public record SQLStatementBuilder(ObjectMapper mapper) {
         case LONG -> builder.fieldLong(key, true);
         case PRIMARYKEY -> builder.fieldUuid(key, true).primaryKey(key);
         case OBJECT -> {
-          builder = builder.jsonValidation("fk_" + key, key, getObjectSchema(keyDefinition.getProperties()));
+          builder = builder.jsonValidation("fk_" + key, key, getObjectSchema(keyDefinition.getProperties(),
+              type.isAdditionalProperties()));
           yield builder.fieldObject(key, true);
         }
         case ARRAY -> {
-          builder = builder.jsonValidation("fk:" + key, key, getArraySchema(keyDefinition));
+          if (!type.isAdditionalProperties()) {
+            builder = builder.jsonValidation("fk_" + key, key,
+                getArraySchema(keyDefinition, type.isAdditionalProperties()));
+          }
           yield builder.fieldObject(key, true);
         }
       };
+      if (type.isAdditionalProperties()) {
+        builder.fieldObject(ADDITIONAL_PROPERTIES_KEY, true);
+      }
     }
     return builder.build();
   }
@@ -91,29 +100,32 @@ public record SQLStatementBuilder(ObjectMapper mapper) {
         .build();
   }
 
-  private Schema getObjectSchema(List<BackendKeyDefinitionDto> properties) {
+  private Schema getObjectSchema(List<BackendKeyDefinitionDto> properties, boolean additionalProperties) {
     ObjectSchema.Builder builder = ObjectSchema.builder();
-
+    if (additionalProperties) {
+      builder.additionalProperties(true);
+    }
     for (BackendKeyDefinitionDto backendKey : properties) {
       String key = backendKey.getKey();
       builder = switch (backendKey.getType()) {
         case TIMESTAMP, DATE, LONG, INTEGER, DOUBLE -> builder.addPropertySchema(key, NumberSchema.builder().build());
         case BOOLEAN -> builder.addPropertySchema(key, BooleanSchema.builder().build());
         case STRING, PRIMARYKEY -> builder.addPropertySchema(key, StringSchema.builder().build());
-        case OBJECT -> builder.addPropertySchema(key, getObjectSchema(backendKey.getProperties()));
-        case ARRAY -> builder.addPropertySchema(key, getArraySchema(backendKey));
+        case OBJECT -> builder.addPropertySchema(key,
+            getObjectSchema(backendKey.getProperties(), additionalProperties));
+        case ARRAY -> builder.addPropertySchema(key, getArraySchema(backendKey, additionalProperties));
       };
     }
-
     return builder.build();
   }
 
-  private Schema getArraySchema(BackendKeyDefinitionDto property) {
+  private Schema getArraySchema(BackendKeyDefinitionDto property, boolean additionalProperties) {
     if (Objects.nonNull(property.getPrimitiveArrayType()) && Objects.nonNull(
         property.getPrimitiveArrayType())) {
       return StringSchema.builder().build();
     } else {
-      return ArraySchema.builder().allItemSchema(getObjectSchema(property.getProperties())).build();
+      return ArraySchema.builder().allItemSchema(getObjectSchema(property.getProperties(), additionalProperties))
+          .build();
     }
   }
 }

@@ -41,24 +41,22 @@ public record ObjectsService(ObjectsDao objectsDao, TypeService typeService) {
   }
 
   public Mono<Map<String, Object>> updateObjectsByTypeId(Mono<Map<String, Object>> monoObject, String typeId) {
-    return monoObject.flatMap(object -> Mono.zip(Mono.just(object), typeService.getById(UUID.fromString(typeId))))
+    return monoObject.flatMap(object -> Mono.zip(Mono.just(object), typeService.getById(UUID.fromString(typeId)))
         .flatMap(pair -> {
           String primaryKey = getPrimaryKeyName(pair.getT2());
-          return objectsDao.getObject(Mono.zip(Mono.just(primaryKey), Mono.just(pair.getT2())))
-              .map(oldObject -> Mono.zip(Mono.just(pair.getT1()), Mono.just(oldObject), Mono.just(pair.getT2())));
-        })
-        .flatMap(objectsDao::updateObject);
+          return objectsDao.updateObject(objectsDao.getObject(Mono.zip(Mono.just(primaryKey), Mono.just(pair.getT2())))
+              .flatMap(oldObject -> Mono.zip(Mono.just(pair.getT1()), Mono.just(oldObject), Mono.just(pair.getT2()))));
+        }));
   }
 
   public Mono<Map<String, Object>> updateObjectsByTypeName(Mono<Map<String, Object>> monoObject, String typeName) {
-    return monoObject.flatMap(object -> Mono.zip(Mono.just(object), typeService.getByName(typeName)))
+    return monoObject.flatMap(object -> Mono.zip(Mono.just(object), typeService.getByName(typeName))
         .flatMap(pair -> {
           String primaryKey = getPrimaryKeyName(pair.getT2());
           String objectId = Objects.toString(pair.getT1().get(primaryKey));
-          return objectsDao.getObject(Mono.zip(Mono.just(objectId), Mono.just(pair.getT2())))
-              .map(oldObject -> Mono.zip(Mono.just(pair.getT1()), Mono.just(oldObject), Mono.just(pair.getT2())));
-        })
-        .flatMap(objectsDao::updateObject);
+          return objectsDao.updateObject(objectsDao.getObject(Mono.zip(Mono.just(objectId), Mono.just(pair.getT2())))
+              .flatMap(oldObject -> Mono.zip(Mono.just(pair.getT1()), Mono.just(oldObject), Mono.just(pair.getT2()))));
+        }));
   }
 
   private String getPrimaryKeyName(Type type) {

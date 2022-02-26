@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 public record SQLUtils(ObjectMapper mapper) {
 
   public Map<String, Object> mapJsonObjects(Map<String, Object> object) {
-    HashMap<String, Object> newObject = new HashMap<>();
+    Map<String, Object> newObject = new HashMap<>();
     for (Entry<String, Object> entry : object.entrySet()) {
       if (entry.getValue() instanceof Json) {
         try {

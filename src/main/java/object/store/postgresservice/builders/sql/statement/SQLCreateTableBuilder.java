@@ -1,8 +1,7 @@
 package object.store.postgresservice.builders.sql.statement;
 
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.util.Strings;
 import org.everit.json.schema.Schema;
@@ -11,16 +10,16 @@ public class SQLCreateTableBuilder {
 
   private final static String COMMA_DELIMITER = ",";
   private final static String SPACE_DELIMITER = " ";
-  private final Set<String> items;
-  private final Set<String> constraints;
+  private final TreeSet<String> items;
+  private final TreeSet<String> constraints;
   private String tableName;
   private String primaryKey;
 
   SQLCreateTableBuilder() {
     primaryKey = Strings.EMPTY;
     tableName = Strings.EMPTY;
-    items = new HashSet<>();
-    constraints = new HashSet<>();
+    items = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+    constraints = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
   }
 
   public SQLCreateTableBuilder name(String tableName) {
@@ -59,11 +58,6 @@ public class SQLCreateTableBuilder {
   }
 
   public SQLCreateTableBuilder fieldTimeStamp(String key, boolean isNullAble) {
-    items.add(field(key, isNullAble, "TIMESTAMP"));
-    return this;
-  }
-
-  public SQLCreateTableBuilder fieldDate(String key, boolean isNullAble) {
     items.add(field(key, isNullAble, "TIMESTAMP"));
     return this;
   }
