@@ -1,5 +1,7 @@
 package object.store.postgresservice.builders;
 
+import static object.store.postgresservice.services.AdditionalPropertyService.ADDITIONAL_PROPERTIES_KEY;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
@@ -24,8 +26,6 @@ import org.springframework.stereotype.Service;
 @Service
 public record SQLStatementBuilder(ObjectMapper mapper) {
 
-  public static String ADDITIONAL_PROPERTIES_KEY = "additionalProperties";
-
   public SQLStatement createTable(TypeDto type) {
     SQLCreateTableBuilder builder = SQLStatement.createTableBuilder().name(type.getName());
     for (BackendKeyDefinitionDto keyDefinition : type.getBackendKeyDefinitionDtos()) {
@@ -39,8 +39,8 @@ public record SQLStatementBuilder(ObjectMapper mapper) {
         case LONG -> builder.fieldLong(key, true);
         case PRIMARYKEY -> builder.fieldUuid(key, true).primaryKey(key);
         case OBJECT -> {
-          builder = builder.jsonValidation("fk_" + key, key, getObjectSchema(keyDefinition.getProperties(),
-              type.isAdditionalProperties()));
+          builder = builder.jsonValidation("fk_" + key, key,
+              getObjectSchema(keyDefinition.getProperties(), type.isAdditionalProperties()));
           yield builder.fieldObject(key, true);
         }
         case ARRAY -> {
@@ -83,8 +83,8 @@ public record SQLStatementBuilder(ObjectMapper mapper) {
     return SQLStatement.selectObjectBuilder().name(tableName).build();
   }
 
-  public SQLStatement updateObjectByPrimaryKey(String tableName, String primaryKey, String primaryValue, Map<String,
-      Object> newValues) {
+  public SQLStatement updateObjectByPrimaryKey(String tableName, String primaryKey, String primaryValue,
+      Map<String, Object> newValues) {
     var mappedValues = newValues.entrySet().stream().collect(Collectors.toMap(Entry::getKey, entry -> {
       if (entry.getValue() instanceof List<?> || entry.getValue() instanceof Map<?, ?>) {
         try {
@@ -120,8 +120,7 @@ public record SQLStatementBuilder(ObjectMapper mapper) {
   }
 
   private Schema getArraySchema(BackendKeyDefinitionDto property, boolean additionalProperties) {
-    if (Objects.nonNull(property.getPrimitiveArrayType()) && Objects.nonNull(
-        property.getPrimitiveArrayType())) {
+    if (Objects.nonNull(property.getPrimitiveArrayType()) && Objects.nonNull(property.getPrimitiveArrayType())) {
       return StringSchema.builder().build();
     } else {
       return ArraySchema.builder().allItemSchema(getObjectSchema(property.getProperties(), additionalProperties))
