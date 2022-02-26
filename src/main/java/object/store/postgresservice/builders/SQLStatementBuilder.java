@@ -30,25 +30,26 @@ public record SQLStatementBuilder(ObjectMapper mapper) {
     SQLCreateTableBuilder builder = SQLStatement.createTableBuilder().name(type.getName());
     for (BackendKeyDefinitionDto keyDefinition : type.getBackendKeyDefinitionDtos()) {
       String key = keyDefinition.getKey();
+      boolean isNullAble = keyDefinition.isNullAble();
       builder = switch (keyDefinition.getType()) {
-        case TIMESTAMP, DATE -> builder.fieldTimeStamp(key, true);
-        case INTEGER -> builder.fieldInteger(key, true);
-        case BOOLEAN -> builder.fieldBoolean(key, true);
-        case STRING -> builder.fieldString(key, true);
-        case DOUBLE -> builder.fieldDouble(key, true);
-        case LONG -> builder.fieldLong(key, true);
-        case PRIMARYKEY -> builder.fieldUuid(key, true).primaryKey(key);
+        case TIMESTAMP, DATE -> builder.fieldTimeStamp(key, isNullAble);
+        case INTEGER -> builder.fieldInteger(key, isNullAble);
+        case BOOLEAN -> builder.fieldBoolean(key, isNullAble);
+        case STRING -> builder.fieldString(key, isNullAble);
+        case DOUBLE -> builder.fieldDouble(key, isNullAble);
+        case LONG -> builder.fieldLong(key, isNullAble);
+        case PRIMARYKEY -> builder.fieldUuid(key, isNullAble).primaryKey(key);
         case OBJECT -> {
           builder = builder.jsonValidation("fk_" + key, key,
               getObjectSchema(keyDefinition.getProperties(), type.isAdditionalProperties()));
-          yield builder.fieldObject(key, true);
+          yield builder.fieldObject(key, isNullAble);
         }
         case ARRAY -> {
           if (!type.isAdditionalProperties()) {
             builder = builder.jsonValidation("fk_" + key, key,
                 getArraySchema(keyDefinition, type.isAdditionalProperties()));
           }
-          yield builder.fieldObject(key, true);
+          yield builder.fieldObject(key, isNullAble);
         }
       };
       if (type.isAdditionalProperties()) {

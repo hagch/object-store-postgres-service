@@ -8,6 +8,7 @@ public class BackendKeyDefinitionEntity implements Serializable {
   private String key;
   private String type;
   private String primitiveArrayType;
+  private boolean isNullAble;
   private Set<BackendKeyDefinitionEntity> properties;
 
   public String getKey() {
@@ -40,5 +41,13 @@ public class BackendKeyDefinitionEntity implements Serializable {
 
   public void setProperties(Set<BackendKeyDefinitionEntity> properties) {
     this.properties = properties;
+  }
+
+  public boolean isNullAble() {
+    return isNullAble;
+  }
+
+  public void setNullAble(Boolean nullAble) {
+    isNullAble = Boolean.TRUE.equals(nullAble);
   }
 }

@@ -9,6 +9,7 @@ public class BackendKeyDefinitionDto implements Serializable {
   private String key;
   private BackendKeyType type;
   private BackendKeyType primitiveArrayType;
+  private boolean isNullAble;
   private List<BackendKeyDefinitionDto> properties;
 
   public String getKey() {
@@ -41,5 +42,13 @@ public class BackendKeyDefinitionDto implements Serializable {
 
   public void setProperties(List<BackendKeyDefinitionDto> properties) {
     this.properties = properties;
+  }
+
+  public boolean isNullAble() {
+    return isNullAble;
+  }
+
+  public void setNullAble(Boolean nullAble) {
+    isNullAble = Boolean.TRUE.equals(nullAble);
   }
 }

@@ -62,6 +62,7 @@ public interface TypeMapper {
     return definitions.stream().map(definition -> {
       BackendKeyDefinitionDto dto = new BackendKeyDefinitionDto();
       dto.setProperties(mapPropertiesToDto(definition.getProperties()));
+      dto.setNullAble(definition.getIsNullAble());
       dto.setType(definition.getType());
       dto.setKey(definition.getKey());
       dto.setPrimitiveArrayType(definition.getPrimitiveArrayType());
@@ -76,6 +77,7 @@ public interface TypeMapper {
     return definitions.stream().map(definition -> {
       BackendKeyDefinitionEntity entity = new BackendKeyDefinitionEntity();
       entity.setProperties(mapPropertiesDtoToEntity(definition.getProperties()));
+      entity.setNullAble(definition.isNullAble());
       entity.setType(definition.getType().name());
       entity.setKey(definition.getKey());
       if (Objects.nonNull(definition.getPrimitiveArrayType())) {
@@ -92,6 +94,7 @@ public interface TypeMapper {
     return definitions.stream().map(definition -> {
       BackendKeyDefinitionDto dto = new BackendKeyDefinitionDto();
       dto.setProperties(mapPropertiesEntityToDto(definition.getProperties()));
+      dto.setNullAble(definition.isNullAble());
       dto.setType(BackendKeyType.valueOf(definition.getType()));
       dto.setKey(definition.getKey());
       if (StringUtils.hasLength(definition.getPrimitiveArrayType())) {
@@ -107,6 +110,7 @@ public interface TypeMapper {
     }
     return definitions.stream().map(definition -> {
       BackendKeyDefinition dto = new BackendKeyDefinition();
+      dto.setIsNullAble(definition.isNullAble());
       dto.setProperties(mapPropertiesToApi(definition.getProperties()));
       dto.setType(definition.getType());
       dto.setKey(definition.getKey());
