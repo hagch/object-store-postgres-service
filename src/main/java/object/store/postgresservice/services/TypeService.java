@@ -34,4 +34,8 @@ public record TypeService(TypeDao typeDao, TypeMapper mapper) {
   public Mono<Type> createTable(Type document) {
     return typeDao.createTableForType(mapper.apiToDto(document)).map(mapper::dtoToApi);
   }
+
+  public Mono<Void> delete(String id){
+    return typeDao.delete(id);
+  }
 }
