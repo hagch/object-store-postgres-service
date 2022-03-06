@@ -10,6 +10,7 @@ public class BackendKeyDefinitionEntity implements Serializable {
   private String primitiveArrayType;
   private boolean isNullAble;
   private Set<BackendKeyDefinitionEntity> properties;
+  private Boolean additionalProperties;
 
   public String getKey() {
     return key;
@@ -49,5 +50,13 @@ public class BackendKeyDefinitionEntity implements Serializable {
 
   public void setNullAble(Boolean nullAble) {
     isNullAble = Boolean.TRUE.equals(nullAble);
+  }
+
+  public Boolean getAdditionalProperties() {
+    return additionalProperties;
+  }
+
+  public void setAdditionalProperties(Boolean additionalProperties) {
+    this.additionalProperties = Boolean.TRUE.equals(additionalProperties);
   }
 }

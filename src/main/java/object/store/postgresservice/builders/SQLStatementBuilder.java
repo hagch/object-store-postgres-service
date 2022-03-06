@@ -41,13 +41,13 @@ public record SQLStatementBuilder(ObjectMapper mapper) {
         case PRIMARYKEY -> builder.fieldUuid(key, isNullAble).primaryKey(key);
         case OBJECT -> {
           builder = builder.jsonValidation("fk_" + key, key,
-              getObjectSchema(keyDefinition.getProperties(), type.isAdditionalProperties()));
+              getObjectSchema(keyDefinition.getProperties(), keyDefinition.getAdditionalProperties()));
           yield builder.fieldObject(key, isNullAble);
         }
         case ARRAY -> {
           if (!type.isAdditionalProperties()) {
             builder = builder.jsonValidation("fk_" + key, key,
-                getArraySchema(keyDefinition, type.isAdditionalProperties()));
+                getArraySchema(keyDefinition, keyDefinition.getAdditionalProperties()));
           }
           yield builder.fieldObject(key, isNullAble);
         }

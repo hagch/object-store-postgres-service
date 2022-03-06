@@ -66,6 +66,7 @@ public interface TypeMapper {
       dto.setType(definition.getType());
       dto.setKey(definition.getKey());
       dto.setPrimitiveArrayType(definition.getPrimitiveArrayType());
+      dto.setAdditionalProperties(definition.getAdditionalPropertis());
       return dto;
     }).collect(Collectors.toList());
   }
@@ -83,6 +84,7 @@ public interface TypeMapper {
       if (Objects.nonNull(definition.getPrimitiveArrayType())) {
         entity.setPrimitiveArrayType(definition.getPrimitiveArrayType().name());
       }
+      entity.setAdditionalProperties(definition.getAdditionalProperties());
       return entity;
     }).collect(Collectors.toSet());
   }
@@ -97,6 +99,7 @@ public interface TypeMapper {
       dto.setNullAble(definition.isNullAble());
       dto.setType(BackendKeyType.valueOf(definition.getType()));
       dto.setKey(definition.getKey());
+      dto.setAdditionalProperties(definition.getAdditionalProperties());
       if (StringUtils.hasLength(definition.getPrimitiveArrayType())) {
         dto.setPrimitiveArrayType(BackendKeyType.valueOf(definition.getPrimitiveArrayType()));
       }
@@ -114,6 +117,7 @@ public interface TypeMapper {
       dto.setProperties(mapPropertiesToApi(definition.getProperties()));
       dto.setType(definition.getType());
       dto.setKey(definition.getKey());
+      dto.setAdditionalPropertis(definition.getAdditionalProperties());
       dto.setPrimitiveArrayType(definition.getPrimitiveArrayType());
       return dto;
     }).collect(Collectors.toList());
