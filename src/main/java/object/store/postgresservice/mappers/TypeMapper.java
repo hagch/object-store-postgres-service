@@ -66,7 +66,7 @@ public interface TypeMapper {
       dto.setType(definition.getType());
       dto.setKey(definition.getKey());
       dto.setPrimitiveArrayType(definition.getPrimitiveArrayType());
-      dto.setAdditionalProperties(definition.getAdditionalPropertis());
+      dto.setAdditionalProperties(definition.getAdditionalProperties());
       return dto;
     }).collect(Collectors.toList());
   }
@@ -117,7 +117,7 @@ public interface TypeMapper {
       dto.setProperties(mapPropertiesToApi(definition.getProperties()));
       dto.setType(definition.getType());
       dto.setKey(definition.getKey());
-      dto.setAdditionalPropertis(definition.getAdditionalProperties());
+      dto.setAdditionalProperties(definition.getAdditionalProperties());
       dto.setPrimitiveArrayType(definition.getPrimitiveArrayType());
       return dto;
     }).collect(Collectors.toList());
