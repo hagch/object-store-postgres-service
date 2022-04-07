@@ -1,41 +1,72 @@
 package object.store.postgresservice.services;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-import object.store.gen.dbservice.models.Type;
+import object.store.gen.dbservice.models.BackendKeyType;
 import object.store.postgresservice.daos.TypeDao;
-import object.store.postgresservice.mappers.TypeMapper;
+import object.store.postgresservice.dtos.TypeDto;
+import object.store.postgresservice.dtos.models.BasicBackendDefinitionDto;
+import object.store.postgresservice.dtos.models.RelationDefinitionDto;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
-public record TypeService(TypeDao typeDao, TypeMapper mapper) {
+public class TypeService {
 
-  public Mono<Type> getById(UUID id) {
-    return typeDao.getById(id).map(mapper::dtoToApi);
+  private static final List<BackendKeyType> typesToCheck = List.of(BackendKeyType.ONETOONE, BackendKeyType.ONETOMANY);
+  private final TypeDao typeDao;
+
+  public TypeService(TypeDao typeDao) {
+    this.typeDao = typeDao;
   }
 
-  public Mono<Type> getByName(String name) {
-    return typeDao.getByName(name).map(mapper::dtoToApi);
+  public Mono<TypeDto> getById(UUID id) {
+    return typeDao.getById(id);
   }
 
-  public Mono<Flux<Type>> getAll() {
-    return Mono.just(typeDao.getAll().map(mapper::dtoToApi));
+  public Mono<TypeDto> getByName(String name) {
+    return typeDao.getByName(name);
   }
 
-  public Mono<Type> createType(Type document) {
-    return typeDao.createType(mapper.apiToDto(document)).map(mapper::dtoToApi);
+  public Flux<TypeDto> getAll() {
+    return typeDao.getAll();
   }
 
-  public Mono<Type> updateById(Type document) {
-    return typeDao.updateTypeById(mapper.apiToDto(document)).map(mapper::dtoToApi);
+  public Mono<TypeDto> createType(TypeDto document) {
+    return validateTypeReferences(document).flatMap(typeDao::createTableForType).flatMap(typeDao::createType);
   }
 
-  public Mono<Type> createTable(Type document) {
-    return typeDao.createTableForType(mapper.apiToDto(document)).map(mapper::dtoToApi);
+  public Mono<TypeDto> updateById(TypeDto document) {
+    return validateTypeReferences(document).flatMap(typeDao::updateTypeById);
   }
 
-  public Mono<Void> delete(String id){
+  public Mono<Void> delete(String id) {
     return typeDao.delete(id);
+  }
+
+  private Mono<TypeDto> validateTypeReferences(TypeDto type) {
+    return Mono.just(type).map(TypeDto::getBackendKeyDefinitions).flatMapMany(Flux::fromIterable)
+        .filter(def -> typesToCheck.contains(def.getType())).flatMap(definitionToCheck -> {
+          RelationDefinitionDto definition = (RelationDefinitionDto) definitionToCheck;
+          return getById(UUID.fromString(definition.getReferencedTypeId()))
+              .switchIfEmpty(Mono.error(new IllegalStateException("referencedType does not exist")))
+              .flatMap(referencedType -> {
+                Optional<BasicBackendDefinitionDto> optionalKey = referencedType.getBackendKeyDefinitions().stream()
+                    .filter(def -> def.getKey().equals(((RelationDefinitionDto) definitionToCheck).getReferenceKey()))
+                    .findFirst();
+                if (optionalKey.isEmpty()) {
+                  return Mono.empty().switchIfEmpty(Mono.error(new IllegalStateException("Key does not exist")));
+                }
+                return typeDao.doesTableExist(referencedType.getName()).flatMap(doesExist -> {
+                  if (Boolean.FALSE.equals(doesExist)) {
+                    return Mono.error(new IllegalStateException("Table "
+                        + "does not exist"));
+                  }
+                  return Mono.empty();
+                });
+              });
+        }).collectList().thenReturn(type);
   }
 }

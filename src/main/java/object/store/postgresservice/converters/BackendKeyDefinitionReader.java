@@ -6,15 +6,15 @@ import io.r2dbc.postgresql.codec.Json;
 import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Logger;
-import object.store.postgresservice.entities.BackendKeyDefinitionEntity;
+import object.store.postgresservice.entities.models.BasicBackendDefinitionModel;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 
 @ReadingConverter
-public class BackendKeyDefinitionReader implements Converter<Json, Set<BackendKeyDefinitionEntity>> {
+public class BackendKeyDefinitionReader implements Converter<Json, Set<BasicBackendDefinitionModel>> {
 
   @Override
-  public Set<BackendKeyDefinitionEntity> convert(Json json) {
+  public Set<BasicBackendDefinitionModel> convert(Json json) {
     try {
       ObjectMapper objectMapper = new ObjectMapper();
       return objectMapper.readValue(json.asString(), new TypeReference<>() {

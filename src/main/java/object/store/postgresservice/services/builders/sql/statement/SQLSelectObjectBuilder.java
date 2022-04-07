@@ -1,4 +1,4 @@
-package object.store.postgresservice.builders.sql.statement;
+package object.store.postgresservice.services.builders.sql.statement;
 
 import java.util.HashMap;
 import org.apache.logging.log4j.util.Strings;
@@ -18,7 +18,7 @@ public class SQLSelectObjectBuilder {
     return this;
   }
 
-  public SQLSelectObjectBuilder byPrimaryKey(String key, String value) {
+  public SQLSelectObjectBuilder byKey(String key, String value) {
     this.statement = this.statement.concat(" WHERE ").concat(Strings.dquote(key)).concat(" = ")
         .concat(Strings.quote(value));
     return this;

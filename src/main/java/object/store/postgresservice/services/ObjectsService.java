@@ -4,10 +4,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import object.store.gen.dbservice.models.BackendKeyDefinition;
 import object.store.gen.dbservice.models.BackendKeyType;
-import object.store.gen.dbservice.models.Type;
 import object.store.postgresservice.daos.ObjectsDao;
+import object.store.postgresservice.dtos.TypeDto;
+import object.store.postgresservice.dtos.models.BasicBackendDefinitionDto;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -59,13 +59,13 @@ public record ObjectsService(ObjectsDao objectsDao, TypeService typeService) {
         }));
   }
 
-  private String getPrimaryKeyName(Type type) {
-    Optional<BackendKeyDefinition> primary =
+  private String getPrimaryKeyName(TypeDto type) {
+    Optional<BasicBackendDefinitionDto> primary =
         type.getBackendKeyDefinitions().stream()
             .filter(definition -> BackendKeyType.PRIMARYKEY.equals(definition.getType()))
             .findFirst();
     return primary
-        .map(BackendKeyDefinition::getKey)
+        .map(BasicBackendDefinitionDto::getKey)
         .orElse(Strings.EMPTY);
   }
 }

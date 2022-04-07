@@ -3,6 +3,7 @@ package object.store.postgresservice.entities;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import object.store.postgresservice.entities.models.BasicBackendDefinitionModel;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
@@ -20,7 +21,7 @@ public class TypeEntity implements Persistable<UUID> {
   private boolean additionalProperties;
 
   @Column("BACKEND_KEY_DEFINITIONS")
-  private Set<BackendKeyDefinitionEntity> backendKeyDefinitions;
+  private Set<BasicBackendDefinitionModel> backendKeyDefinitions;
 
   public TypeEntity() {
   }
@@ -49,12 +50,11 @@ public class TypeEntity implements Persistable<UUID> {
     this.additionalProperties = additionalProperties;
   }
 
-  public Set<BackendKeyDefinitionEntity> getBackendKeyDefinitions() {
+  public Set<BasicBackendDefinitionModel> getBackendKeyDefinitions() {
     return backendKeyDefinitions;
   }
 
-  public void setBackendKeyDefinitions(
-      Set<BackendKeyDefinitionEntity> backendKeyDefinitions) {
+  public void setBackendKeyDefinitions(Set<BasicBackendDefinitionModel> backendKeyDefinitions) {
     this.backendKeyDefinitions = backendKeyDefinitions;
   }
 

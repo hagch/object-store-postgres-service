@@ -1,4 +1,4 @@
-package object.store.postgresservice.builders.sql.statement;
+package object.store.postgresservice.services.builders.sql.statement;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -34,14 +34,12 @@ public class SQLUpdateObjectBuilder {
 
   public SQLUpdateObjectBuilder values(Map<String, Object> values) {
     this.values.addAll(values.entrySet().stream().map(keySet -> Strings.dquote(keySet.getKey()).concat(" = ")
-        .concat(Strings.quote(Objects.toString(keySet.getValue())))).collect(
-        Collectors.toSet()));
+        .concat(Strings.quote(Objects.toString(keySet.getValue())))).collect(Collectors.toSet()));
     return this;
   }
 
   public SQLStatement build() {
     return new SQLStatement(this.statement.concat(String.join(",", this.values))
-        .concat(" WHERE ".concat(primaryKey.concat(" = ".concat(primaryValue).concat(";"))))
-    );
+        .concat(" WHERE ".concat(primaryKey.concat(" = ".concat(primaryValue).concat(";")))));
   }
 }

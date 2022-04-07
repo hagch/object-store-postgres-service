@@ -1,4 +1,4 @@
-package object.store.postgresservice.builders.sql.statement;
+package object.store.postgresservice.services.builders.sql.statement;
 
 public record SQLStatement(String statement) {
 

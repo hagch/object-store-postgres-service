@@ -1,4 +1,4 @@
-package object.store.postgresservice.builders.sql.statement;
+package object.store.postgresservice.services.builders.sql.statement;
 
 import java.util.Arrays;
 import java.util.TreeSet;
@@ -79,9 +79,15 @@ public class SQLCreateTableBuilder {
     return this;
   }
 
+  public SQLCreateTableBuilder uniqueKey(String key) {
+    constraints.add("CONSTRAINT " + Strings.dquote("unique_" + key) + " UNIQUE (" + Strings.dquote(key) + ")");
+    return this;
+  }
+
   public SQLCreateTableBuilder jsonValidation(String name, String column, Schema schema) {
-    constraints.add("CONSTRAINT " + Strings.dquote(name) + " CHECK (validate_json_schema(" +
-        Strings.quote(schema.toString()) + ", " + Strings.dquote(column) + "))");
+    constraints.add(
+        "CONSTRAINT " + Strings.dquote(name) + " CHECK (validate_json_schema(" + Strings.quote(schema.toString()) + ", "
+            + Strings.dquote(column) + "))");
     return this;
   }
 

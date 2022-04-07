@@ -1,4 +1,4 @@
-package object.store.postgresservice.builders.sql.statement;
+package object.store.postgresservice.services.builders.sql.statement;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

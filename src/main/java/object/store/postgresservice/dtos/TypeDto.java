@@ -1,6 +1,7 @@
 package object.store.postgresservice.dtos;
 
 import java.util.List;
+import object.store.postgresservice.dtos.models.BasicBackendDefinitionDto;
 
 public class TypeDto {
 
@@ -10,7 +11,7 @@ public class TypeDto {
 
   private boolean additionalProperties;
 
-  private List<BackendKeyDefinitionDto> backendKeyDefinitionDtos;
+  private List<BasicBackendDefinitionDto> backendKeyDefinitions;
 
   public String getId() {
     return id;
@@ -28,7 +29,7 @@ public class TypeDto {
     this.name = name;
   }
 
-  public boolean isAdditionalProperties() {
+  public boolean getAdditionalProperties() {
     return additionalProperties;
   }
 
@@ -36,12 +37,12 @@ public class TypeDto {
     this.additionalProperties = additionalProperties;
   }
 
-  public List<BackendKeyDefinitionDto> getBackendKeyDefinitionDtos() {
-    return backendKeyDefinitionDtos;
+  public List<BasicBackendDefinitionDto> getBackendKeyDefinitions() {
+    return backendKeyDefinitions;
   }
 
-  public void setBackendKeyDefinitionDtos(
-      List<BackendKeyDefinitionDto> backendKeyDefinitionDtos) {
-    this.backendKeyDefinitionDtos = backendKeyDefinitionDtos;
+  public void setBackendKeyDefinitions(
+      List<BasicBackendDefinitionDto> backendKeyDefinitions) {
+    this.backendKeyDefinitions = backendKeyDefinitions;
   }
 }

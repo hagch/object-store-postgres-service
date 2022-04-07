@@ -3,15 +3,18 @@ package object.store.postgresservice.daos;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import object.store.gen.dbservice.models.BackendKeyDefinition;
 import object.store.gen.dbservice.models.BackendKeyType;
-import object.store.gen.dbservice.models.Type;
-import object.store.postgresservice.builders.SQLStatementBuilder;
+import object.store.postgresservice.dtos.TypeDto;
+import object.store.postgresservice.dtos.models.BasicBackendDefinitionDto;
+import object.store.postgresservice.dtos.models.RelationDefinitionDto;
 import object.store.postgresservice.services.AdditionalPropertyService;
+import object.store.postgresservice.services.TypeService;
+import object.store.postgresservice.services.builders.SQLStatementBuilder;
 import object.store.postgresservice.utils.SQLUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.util.Strings;
@@ -25,12 +28,15 @@ import reactor.util.function.Tuple3;
 
 @Service
 public record ObjectsDao(DatabaseClient client, R2dbcEntityTemplate template, SQLStatementBuilder sqlBuilder,
-                         SQLUtils sqlUtils, AdditionalPropertyService additionalPropertyService) {
+                         SQLUtils sqlUtils, AdditionalPropertyService additionalPropertyService,
+                         TypeService typeService) {
 
-  public Mono<Map<String, Object>> insertObject(Mono<Tuple2<Map<String, Object>, Type>> monoPair) {
+  private static final List<BackendKeyType> typesToCheck = List.of(BackendKeyType.ONETOONE, BackendKeyType.ONETOMANY);
+
+  public Mono<Map<String, Object>> insertObject(Mono<Tuple2<Map<String, Object>, TypeDto>> monoPair) {
     return monoPair.flatMap(pair -> {
       Map<String, Object> caseSensitiveObject = new HashMap<>(pair.getT1());
-      Type type = pair.getT2();
+      TypeDto type = pair.getT2();
       final String primaryKey = getPrimaryKeyName(type);
       String uuid = UUID.randomUUID().toString();
       caseSensitiveObject.put(primaryKey, uuid);
@@ -38,20 +44,27 @@ public record ObjectsDao(DatabaseClient client, R2dbcEntityTemplate template, SQ
         additionalPropertyService.mapToAdditionalProperties(caseSensitiveObject, type);
       }
       return client.sql(sqlBuilder.insertObject(caseSensitiveObject, type.getName()).getStatement())
-          .fetch().rowsUpdated().map(t -> Triple.of(type.getName(), uuid, primaryKey));
+          .fetch().rowsUpdated()
+          .flatMap(rows -> {
+            if (Objects.equals(rows, 0)) {
+              return Mono.error(new IllegalStateException("Object not updated"));
+            }
+            return Mono.just(rows);
+          })
+          .map(t -> Triple.of(type.getName(), uuid, primaryKey));
     }).flatMap(triple -> getSingleSelectResult(triple.getLeft(), triple.getRight(), triple.getMiddle()));
   }
 
-  public Mono<Map<String, Object>> getObject(Mono<Tuple2<String, Type>> monoPair) {
+  public Mono<Map<String, Object>> getObject(Mono<Tuple2<String, TypeDto>> monoPair) {
     return monoPair.flatMap(pair -> {
       String objectId = pair.getT1();
-      Type type = pair.getT2();
+      TypeDto type = pair.getT2();
       final String primaryKey = getPrimaryKeyName(type);
       return getSingleSelectResult(type.getName(), primaryKey, objectId);
     });
   }
 
-  public Flux<Map<String, Object>> getObjects(Mono<Type> typeMono) {
+  public Flux<Map<String, Object>> getObjects(Mono<TypeDto> typeMono) {
     return typeMono
         .flatMapMany(
             type -> client.sql(sqlBuilder.selectObjectsByTableName(type.getName()).getStatement()).fetch().all())
@@ -61,11 +74,11 @@ public record ObjectsDao(DatabaseClient client, R2dbcEntityTemplate template, SQ
   }
 
   public Mono<Map<String, Object>> updateObject(
-      Mono<Tuple3<Map<String, Object>, Map<String, Object>, Type>> tripleMono) {
+      Mono<Tuple3<Map<String, Object>, Map<String, Object>, TypeDto>> tripleMono) {
     return tripleMono.flatMap(triple -> {
       Map<String, Object> newObject = triple.getT1();
       Map<String, Object> oldObject = triple.getT2();
-      Type type = triple.getT3();
+      TypeDto type = triple.getT3();
       String primaryKey = getPrimaryKeyName(type);
       String primaryValue = Objects.toString(newObject.get(primaryKey));
       MapDifference<String, Object> difference = Maps.difference(newObject, oldObject);
@@ -80,6 +93,12 @@ public record ObjectsDao(DatabaseClient client, R2dbcEntityTemplate template, SQ
         monoObject = client.sql(
                 sqlBuilder.updateObjectByPrimaryKey(type.getName(), primaryKey, primaryValue, differences).getStatement())
             .fetch().rowsUpdated()
+            .flatMap(rows -> {
+              if (Objects.equals(rows, 0)) {
+                return Mono.error(new IllegalStateException("Object not updated"));
+              }
+              return Mono.just(rows);
+            })
             .flatMap(n -> client.sql(
                     sqlBuilder.selectObjectByPrimary(type.getName(), primaryKey, primaryValue).getStatement()).fetch()
                 .first());
@@ -89,13 +108,13 @@ public record ObjectsDao(DatabaseClient client, R2dbcEntityTemplate template, SQ
     });
   }
 
-  private String getPrimaryKeyName(Type type) {
-    Optional<BackendKeyDefinition> primary =
+  private String getPrimaryKeyName(TypeDto type) {
+    Optional<BasicBackendDefinitionDto> primary =
         type.getBackendKeyDefinitions().stream()
             .filter(definition -> BackendKeyType.PRIMARYKEY.equals(definition.getType()))
             .findFirst();
     return primary
-        .map(BackendKeyDefinition::getKey)
+        .map(BasicBackendDefinitionDto::getKey)
         .orElse(Strings.EMPTY);
   }
 
@@ -105,6 +124,30 @@ public record ObjectsDao(DatabaseClient client, R2dbcEntityTemplate template, SQ
         .first()
         .map(sqlUtils::mapJsonObjects)
         .map(additionalPropertyService::mapAdditionalProperties).log();
+  }
+
+  private Mono<Map<String, Object>> validateObject(Flux<BasicBackendDefinitionDto> definitions,
+      Map<String, Object> object) {
+    return definitions.filter(def -> typesToCheck.contains(def.getType())).flatMap(definitionToCheck -> {
+      RelationDefinitionDto definition = (RelationDefinitionDto) definitionToCheck;
+      if (Objects.isNull(object.get(definition.getKey()))) {
+        return Mono.empty();
+      }
+      return typeService.getById(UUID.fromString(definition.getReferencedTypeId())).flatMap(referencedType -> {
+        BasicBackendDefinitionDto referencedDefinition =
+            referencedType.getBackendKeyDefinitions().stream()
+                .filter(t -> t.getKey().equals(definition.getReferenceKey())).findFirst().orElse(
+                    null);
+        if (Objects.isNull(referencedDefinition)) {
+          return Mono.error(new IllegalStateException("Referenced Key does not exist"));
+        }
+        return client.sql(sqlBuilder.selectObjectByPrimary(referencedType.getName(), referencedDefinition.getKey(),
+                object.get(referencedDefinition.getKey()).toString()).getStatement())
+            .fetch()
+            .first().switchIfEmpty(Mono.error(new IllegalStateException("Referenced Object does not exist")))
+            .map(t -> object);
+      });
+    }).collectList().thenReturn(object);
   }
 }
 
