@@ -1,13 +1,21 @@
 package object.store.postgresservice.services;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import object.store.gen.dbservice.models.BackendKeyType;
 import object.store.postgresservice.daos.TypeDao;
 import object.store.postgresservice.dtos.TypeDto;
+import object.store.postgresservice.dtos.models.ArrayDefinitionDto;
 import object.store.postgresservice.dtos.models.BasicBackendDefinitionDto;
+import object.store.postgresservice.dtos.models.ObjectDefinitionDto;
 import object.store.postgresservice.dtos.models.RelationDefinitionDto;
+import object.store.postgresservice.exceptions.GetAllTypesFailed;
+import object.store.postgresservice.exceptions.ReferencedKeyDontExistsFromType;
+import object.store.postgresservice.exceptions.TypeNotFoundById;
+import object.store.postgresservice.exceptions.TypeNotFoundByName;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -47,26 +55,53 @@ public class TypeService {
   }
 
   private Mono<TypeDto> validateTypeReferences(TypeDto type) {
-    return Mono.just(type).map(TypeDto::getBackendKeyDefinitions).flatMapMany(Flux::fromIterable)
-        .filter(def -> typesToCheck.contains(def.getType())).flatMap(definitionToCheck -> {
-          RelationDefinitionDto definition = (RelationDefinitionDto) definitionToCheck;
-          return getById(UUID.fromString(definition.getReferencedTypeId()))
-              .switchIfEmpty(Mono.error(new IllegalStateException("referencedType does not exist")))
-              .flatMap(referencedType -> {
-                Optional<BasicBackendDefinitionDto> optionalKey = referencedType.getBackendKeyDefinitions().stream()
-                    .filter(def -> def.getKey().equals(((RelationDefinitionDto) definitionToCheck).getReferenceKey()))
-                    .findFirst();
-                if (optionalKey.isEmpty()) {
-                  return Mono.empty().switchIfEmpty(Mono.error(new IllegalStateException("Key does not exist")));
+    return checkFoundRelation(Mono.just(type).map(TypeDto::getBackendKeyDefinitions).flatMapMany(Flux::fromIterable)).collectList().thenReturn(type);
+  }
+
+  private Flux<Void> checkFoundRelation(Flux<BasicBackendDefinitionDto> fluxDefinition){
+    return fluxDefinition.filter( def -> typesToCheck.contains(def.getType())).flatMap( definitionToCheck -> switch(definitionToCheck){
+      case RelationDefinitionDto definition -> validateRelation(definition);
+      case ObjectDefinitionDto definition && !definition.getProperties().isEmpty()->  checkFoundRelation(Flux.fromIterable(definition.getProperties()).thenMany(Flux.empty()));
+      case ArrayDefinitionDto definition && !definition.getProperties().isEmpty() -> checkFoundRelation(Flux.fromIterable(definition.getProperties())).thenMany(Flux.empty());
+      case default -> Flux.empty();
+    });
+  }
+  private Flux<Void> validateRelation(RelationDefinitionDto relation){
+    return Flux.concat(getById(UUID.fromString(relation.getReferencedTypeId()))
+        .flatMap(referencedType -> {
+          Optional<BasicBackendDefinitionDto> optionalKey = findDefinition(relation.getReferenceKey(),
+              referencedType.getBackendKeyDefinitions());
+          if (optionalKey.isEmpty()) {
+            return Mono.error(new ReferencedKeyDontExistsFromType(relation.getReferenceKey(), referencedType.getName()));
+          }
+          return typeDao.doesTableExist(referencedType.getName()).flatMap(doesExist -> {
+            if (Boolean.FALSE.equals(doesExist)) {
+              return Mono.error(new TypeNotFoundByName(referencedType.getName()));
+            }
+            return Mono.empty();
+          });
+        }).thenMany(Flux.empty()));
+  }
+
+  private Optional<BasicBackendDefinitionDto> findDefinition(String key,
+      List<BasicBackendDefinitionDto> definitions){
+    Optional<BasicBackendDefinitionDto> found = definitions.stream().filter( definition -> Objects.equals(key,
+        definition.getKey())).findFirst();
+    if(found.isEmpty()){
+      Optional<Optional<BasicBackendDefinitionDto>> optional =
+          definitions.stream().filter( definitionDto -> definitionDto instanceof ArrayDefinitionDto || definitionDto instanceof ObjectDefinitionDto)
+              .map( definition -> {
+                if(definition instanceof  ArrayDefinitionDto casted && Objects.nonNull(casted.getProperties()) && !casted.getProperties().isEmpty()){
+                  return casted.getProperties();
                 }
-                return typeDao.doesTableExist(referencedType.getName()).flatMap(doesExist -> {
-                  if (Boolean.FALSE.equals(doesExist)) {
-                    return Mono.error(new IllegalStateException("Table "
-                        + "does not exist"));
-                  }
-                  return Mono.empty();
-                });
-              });
-        }).collectList().thenReturn(type);
+                if(definition instanceof ObjectDefinitionDto casted && Objects.nonNull(casted.getProperties())){
+                  return casted.getProperties();
+                }
+                return Collections.emptyList();
+              }).map( foundDefinitions -> findDefinition(key, (List<BasicBackendDefinitionDto>) foundDefinitions)).filter(
+                  Optional::isPresent).findFirst();
+      found = optional.orElse(found);
+    }
+    return found;
   }
 }

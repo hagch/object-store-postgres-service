@@ -11,8 +11,10 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.UrlResource;
+import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.connection.init.ConnectionFactoryInitializer;
 import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator;
+import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.util.ResourceUtils;
 
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
@@ -37,5 +39,9 @@ public class PostgresServiceApplication {
             "schema.sql")));
     initializer.setDatabasePopulator(resource);
     return initializer;
+  }
+  @Bean
+  public ReactiveTransactionManager transactionManager(ConnectionFactory connectionFactory) {
+    return new R2dbcTransactionManager(connectionFactory);
   }
 }

@@ -1,7 +1,10 @@
 package object.store.postgresservice.daos;
 
+import java.util.Objects;
 import java.util.UUID;
 import object.store.postgresservice.dtos.TypeDto;
+import object.store.postgresservice.exceptions.TypeNotFoundById;
+import object.store.postgresservice.exceptions.TypeNotFoundByName;
 import object.store.postgresservice.mappers.TypeMapper;
 import object.store.postgresservice.repositories.TypeRepository;
 import object.store.postgresservice.services.builders.SQLStatementBuilder;
@@ -22,11 +25,11 @@ public record TypeDao(TypeRepository typeRepository, TypeMapper typeMapper, Data
   }
 
   public Mono<TypeDto> getById(UUID id) {
-    return typeRepository.findById(id).map(typeMapper::entityToDto);
+    return typeRepository.getById(id).switchIfEmpty(Mono.error(new TypeNotFoundById(id.toString()))).map(typeMapper::entityToDto);
   }
 
   public Mono<TypeDto> getByName(String name) {
-    return typeRepository.findByName(name).map(typeMapper::entityToDto);
+    return typeRepository.findByName(name).switchIfEmpty(Mono.error(new TypeNotFoundByName(name))).map(typeMapper::entityToDto);
   }
 
   public Mono<TypeDto> createType(TypeDto typeDto) {
@@ -43,7 +46,9 @@ public record TypeDao(TypeRepository typeRepository, TypeMapper typeMapper, Data
   }
 
   public Mono<Void> delete(String id) {
-    return typeRepository.findById(UUID.fromString(id)).flatMap(document -> Mono.zip(typeRepository.delete(document),
+    return typeRepository.findById(UUID.fromString(id))
+        .switchIfEmpty(Mono.error(new TypeNotFoundById(id)))
+        .flatMap(document -> Mono.zip(typeRepository.delete(document),
         client.sql("DROP TABLE " + Strings.dquote(document.getName()) + " ;").then()).then());
   }
 

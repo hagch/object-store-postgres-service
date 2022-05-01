@@ -12,6 +12,11 @@ import object.store.gen.dbservice.models.BackendKeyType;
 import object.store.postgresservice.dtos.TypeDto;
 import object.store.postgresservice.dtos.models.BasicBackendDefinitionDto;
 import object.store.postgresservice.dtos.models.RelationDefinitionDto;
+import object.store.postgresservice.exceptions.CreateObjectFailed;
+import object.store.postgresservice.exceptions.DeleteObjectFailed;
+import object.store.postgresservice.exceptions.GetAllObjectsByTypeNameFailed;
+import object.store.postgresservice.exceptions.ObjectNotFound;
+import object.store.postgresservice.exceptions.UpdateObjectFailed;
 import object.store.postgresservice.services.AdditionalPropertyService;
 import object.store.postgresservice.services.TypeService;
 import object.store.postgresservice.services.builders.SQLStatementBuilder;
@@ -30,9 +35,6 @@ import reactor.util.function.Tuple3;
 public record ObjectsDao(DatabaseClient client, R2dbcEntityTemplate template, SQLStatementBuilder sqlBuilder,
                          SQLUtils sqlUtils, AdditionalPropertyService additionalPropertyService,
                          TypeService typeService) {
-
-  private static final List<BackendKeyType> typesToCheck = List.of(BackendKeyType.ONETOONE, BackendKeyType.ONETOMANY);
-
   public Mono<Map<String, Object>> insertObject(Mono<Tuple2<Map<String, Object>, TypeDto>> monoPair) {
     return monoPair.flatMap(pair -> {
       Map<String, Object> caseSensitiveObject = new HashMap<>(pair.getT1());
@@ -47,12 +49,14 @@ public record ObjectsDao(DatabaseClient client, R2dbcEntityTemplate template, SQ
           .fetch().rowsUpdated()
           .flatMap(rows -> {
             if (Objects.equals(rows, 0)) {
-              return Mono.error(new IllegalStateException("Object not updated"));
+              return Mono.error(new CreateObjectFailed(caseSensitiveObject.toString(),type.toString()));
             }
             return Mono.just(rows);
           })
           .map(t -> Triple.of(type.getName(), uuid, primaryKey));
-    }).flatMap(triple -> getSingleSelectResult(triple.getLeft(), triple.getRight(), triple.getMiddle()));
+    }).flatMap(triple -> getSingleSelectResult(triple.getLeft(),
+        triple.getRight(),
+        triple.getMiddle()));
   }
 
   public Mono<Map<String, Object>> getObject(Mono<Tuple2<String, TypeDto>> monoPair) {
@@ -67,7 +71,9 @@ public record ObjectsDao(DatabaseClient client, R2dbcEntityTemplate template, SQ
   public Flux<Map<String, Object>> getObjects(Mono<TypeDto> typeMono) {
     return typeMono
         .flatMapMany(
-            type -> client.sql(sqlBuilder.selectObjectsByTableName(type.getName()).getStatement()).fetch().all())
+            type -> client.sql(sqlBuilder.selectObjectsByTableName(type.getName()).getStatement()).fetch().all()
+                .switchIfEmpty(Mono.error(new GetAllObjectsByTypeNameFailed(type.getName())))
+        )
         .map(sqlUtils::mapJsonObjects)
         .map(additionalPropertyService::mapAdditionalProperties);
 
@@ -95,7 +101,7 @@ public record ObjectsDao(DatabaseClient client, R2dbcEntityTemplate template, SQ
             .fetch().rowsUpdated()
             .flatMap(rows -> {
               if (Objects.equals(rows, 0)) {
-                return Mono.error(new IllegalStateException("Object not updated"));
+                return Mono.error(new UpdateObjectFailed(newObject.toString(),type.toString()));
               }
               return Mono.just(rows);
             })
@@ -106,6 +112,16 @@ public record ObjectsDao(DatabaseClient client, R2dbcEntityTemplate template, SQ
       return monoObject.map(sqlUtils::mapJsonObjects)
           .map(additionalPropertyService::mapAdditionalProperties);
     });
+  }
+
+  public Mono<Integer> deleteObject(String objectId, TypeDto typeDto){
+      return client.sql(sqlBuilder.deleteObjectByPrimaryKey(typeDto.getName(),getPrimaryKeyName(typeDto),objectId).getStatement())
+          .fetch().rowsUpdated().flatMap(rows -> {
+            if (Objects.equals(rows, 0)) {
+              return Mono.error(new DeleteObjectFailed(objectId));
+            }
+            return Mono.just(rows);
+          });
   }
 
   private String getPrimaryKeyName(TypeDto type) {
@@ -123,31 +139,8 @@ public record ObjectsDao(DatabaseClient client, R2dbcEntityTemplate template, SQ
         .fetch()
         .first()
         .map(sqlUtils::mapJsonObjects)
-        .map(additionalPropertyService::mapAdditionalProperties).log();
-  }
-
-  private Mono<Map<String, Object>> validateObject(Flux<BasicBackendDefinitionDto> definitions,
-      Map<String, Object> object) {
-    return definitions.filter(def -> typesToCheck.contains(def.getType())).flatMap(definitionToCheck -> {
-      RelationDefinitionDto definition = (RelationDefinitionDto) definitionToCheck;
-      if (Objects.isNull(object.get(definition.getKey()))) {
-        return Mono.empty();
-      }
-      return typeService.getById(UUID.fromString(definition.getReferencedTypeId())).flatMap(referencedType -> {
-        BasicBackendDefinitionDto referencedDefinition =
-            referencedType.getBackendKeyDefinitions().stream()
-                .filter(t -> t.getKey().equals(definition.getReferenceKey())).findFirst().orElse(
-                    null);
-        if (Objects.isNull(referencedDefinition)) {
-          return Mono.error(new IllegalStateException("Referenced Key does not exist"));
-        }
-        return client.sql(sqlBuilder.selectObjectByPrimary(referencedType.getName(), referencedDefinition.getKey(),
-                object.get(referencedDefinition.getKey()).toString()).getStatement())
-            .fetch()
-            .first().switchIfEmpty(Mono.error(new IllegalStateException("Referenced Object does not exist")))
-            .map(t -> object);
-      });
-    }).collectList().thenReturn(object);
+        .map(additionalPropertyService::mapAdditionalProperties)
+        .switchIfEmpty(Mono.error(new ObjectNotFound(primaryValue,type)));
   }
 }
 

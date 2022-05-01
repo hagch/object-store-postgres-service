@@ -21,6 +21,7 @@ import object.store.postgresservice.services.TypeService;
 import object.store.postgresservice.services.builders.sql.statement.SQLCreateTableBuilder;
 import object.store.postgresservice.services.builders.sql.statement.SQLInsertObjectBuilder;
 import object.store.postgresservice.services.builders.sql.statement.SQLStatement;
+import org.apache.logging.log4j.util.Strings;
 import org.everit.json.schema.ArraySchema;
 import org.everit.json.schema.BooleanSchema;
 import org.everit.json.schema.NumberSchema;
@@ -124,6 +125,11 @@ public class SQLStatementBuilder {
     }));
     return SQLStatement.updateObjectBuilder().name(tableName).primaryKey(primaryKey, primaryValue).values(mappedValues)
         .build();
+  }
+
+  public SQLStatement deleteObjectByPrimaryKey(String tableName, String primaryKey, String primaryValue){
+    return new SQLStatement("DELETE FROM " + Strings.dquote(tableName) + " WHERE " + Strings.dquote(primaryKey) + " ="
+        + " " + Strings.quote(primaryValue));
   }
 
   private Schema getObjectSchema(List<BasicBackendDefinitionDto> properties, boolean additionalProperties) {

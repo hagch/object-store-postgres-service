@@ -10,7 +10,7 @@
     <artifactId>spring-boot-starter-parent</artifactId>
     <groupId>org.springframework.boot</groupId>
     <relativePath/>
-    <version>2.6.3</version> <!-- lookup parent from repository -->
+    <version>2.6.7</version> <!-- lookup parent from repository -->
   </parent>
   <properties>
     <alanda-lib.version>1.0.12</alanda-lib.version>
@@ -47,7 +47,6 @@
           <execution>
             <configuration>
               <apiPackage>object.store.gen.dbservice.apis</apiPackage>
-              <auth>Authorization: token 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</auth>
               <configOptions>
                 <interfaceOnly>true</interfaceOnly>
                 <java8>true</java8>
@@ -55,7 +54,7 @@
               </configOptions>
               <generatorName>spring</generatorName>
               <inputSpec>
-                https://raw.githubusercontent.com/hagch/object-store-configuration-service/master/database-service.yaml
+                ./database-service.yaml
               </inputSpec>
               <modelPackage>object.store.gen.dbservice.models</modelPackage>
             </configuration>
