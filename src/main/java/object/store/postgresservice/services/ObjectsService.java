@@ -4,38 +4,35 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import javax.persistence.Tuple;
 import object.store.gen.dbservice.models.BackendKeyType;
 import object.store.postgresservice.daos.ObjectsDao;
 import object.store.postgresservice.dtos.TypeDto;
 import object.store.postgresservice.dtos.models.BasicBackendDefinitionDto;
-import object.store.postgresservice.exceptions.TypeNotFoundById;
-import object.store.postgresservice.exceptions.TypeNotFoundByName;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuples;
 
 @Service
 public record ObjectsService(ObjectsDao objectsDao, TypeService typeService) {
 
   public Mono<Map<String, Object>> insertObjectByTypeName(Mono<Map<String, Object>> monoObject, String typeName) {
     return typeService.getByName(typeName)
-        .flatMap( type -> objectsDao.insertObject(Mono.zip(monoObject,Mono.just(type))));
+        .flatMap(type -> objectsDao.insertObject(Mono.zip(monoObject, Mono.just(type))));
   }
 
   public Mono<Map<String, Object>> insertObjectByTypId(Mono<Map<String, Object>> monoObject, String typeId) {
     return typeService.getById(UUID.fromString(typeId))
-        .flatMap( type -> objectsDao.insertObject(Mono.zip(monoObject,Mono.just(type))));
+        .flatMap(type -> objectsDao.insertObject(Mono.zip(monoObject, Mono.just(type))));
   }
 
   public Mono<Map<String, Object>> getObjectByTypId(String objectId, String typeId) {
-    return typeService.getById(UUID.fromString(typeId)).flatMap( type -> objectsDao.getObject(Mono.zip(Mono.just(objectId),Mono.just(type))));
+    return typeService.getById(UUID.fromString(typeId))
+        .flatMap(type -> objectsDao.getObject(Mono.zip(Mono.just(objectId), Mono.just(type))));
   }
 
   public Mono<Map<String, Object>> getObjectByTypName(String objectId, String typeName) {
-    return typeService.getByName(typeName).flatMap( type -> objectsDao.getObject(Mono.zip(Mono.just(objectId),
+    return typeService.getByName(typeName).flatMap(type -> objectsDao.getObject(Mono.zip(Mono.just(objectId),
         Mono.just(type))));
   }
 
@@ -48,7 +45,7 @@ public record ObjectsService(ObjectsDao objectsDao, TypeService typeService) {
   }
 
   public Mono<Map<String, Object>> updateObjectsByTypeId(Mono<Map<String, Object>> monoObject, String typeId) {
-    return typeService.getById(UUID.fromString(typeId)).flatMap( type -> Mono.zip(monoObject,Mono.just(type)))
+    return typeService.getById(UUID.fromString(typeId)).flatMap(type -> Mono.zip(monoObject, Mono.just(type)))
         .flatMap(pair -> {
           String primaryKey = getPrimaryKeyName(pair.getT2());
           String objectId = Objects.toString(pair.getT1().get(primaryKey));
@@ -58,7 +55,7 @@ public record ObjectsService(ObjectsDao objectsDao, TypeService typeService) {
   }
 
   public Mono<Map<String, Object>> updateObjectsByTypeName(Mono<Map<String, Object>> monoObject, String typeName) {
-    return typeService.getByName(typeName).flatMap( type -> Mono.zip(monoObject,Mono.just(type)))
+    return typeService.getByName(typeName).flatMap(type -> Mono.zip(monoObject, Mono.just(type)))
         .flatMap(pair -> {
           String primaryKey = getPrimaryKeyName(pair.getT2());
           String objectId = Objects.toString(pair.getT1().get(primaryKey));
@@ -67,12 +64,12 @@ public record ObjectsService(ObjectsDao objectsDao, TypeService typeService) {
         });
   }
 
-  public Mono<Integer> deleteObjectByTypeId(String objectId, String typeId){
-    return typeService.getById(UUID.fromString(typeId)).flatMap( type -> objectsDao.deleteObject(objectId,type));
+  public Mono<Integer> deleteObjectByTypeId(String objectId, String typeId) {
+    return typeService.getById(UUID.fromString(typeId)).flatMap(type -> objectsDao.deleteObject(objectId, type));
   }
 
-  public Mono<Integer> deleteObjectByTypeName(String objectId, String typeName){
-    return typeService.getByName(typeName).flatMap( type -> objectsDao.deleteObject(objectId,type));
+  public Mono<Integer> deleteObjectByTypeName(String objectId, String typeName) {
+    return typeService.getByName(typeName).flatMap(type -> objectsDao.deleteObject(objectId, type));
   }
 
   private String getPrimaryKeyName(TypeDto type) {

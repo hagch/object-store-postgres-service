@@ -13,9 +13,7 @@ import object.store.postgresservice.dtos.models.ArrayDefinitionDto;
 import object.store.postgresservice.dtos.models.BasicBackendDefinitionDto;
 import object.store.postgresservice.dtos.models.ObjectDefinitionDto;
 import object.store.postgresservice.dtos.models.RelationDefinitionDto;
-import object.store.postgresservice.exceptions.GetAllTypesFailed;
 import object.store.postgresservice.exceptions.ReferencedKeyDontExistsFromType;
-import object.store.postgresservice.exceptions.TypeNotFoundById;
 import object.store.postgresservice.exceptions.TypeNotFoundByName;
 import object.store.postgresservice.exceptions.WrongTypeId;
 import org.springframework.stereotype.Service;
@@ -48,11 +46,11 @@ public class TypeService {
     return validateTypeReferences(document).flatMap(typeDao::createTableForType).flatMap(typeDao::createType);
   }
 
-  public Mono<TypeDto> updateType(String typeId, TypeDto document, List<Map<String,Object>> objects) {
-    if(!Objects.equals(typeId, document.getId())){
+  public Mono<TypeDto> updateType(String typeId, TypeDto document, List<Map<String, Object>> objects) {
+    if (!Objects.equals(typeId, document.getId())) {
       return Mono.error(new WrongTypeId());
     }
-    return typeDao.updateType(document,objects);
+    return typeDao.updateType(document, objects);
   }
 
   public Mono<Void> delete(String id) {
@@ -60,24 +58,31 @@ public class TypeService {
   }
 
   private Mono<TypeDto> validateTypeReferences(TypeDto type) {
-    return checkFoundRelation(Mono.just(type).map(TypeDto::getBackendKeyDefinitions).flatMapMany(Flux::fromIterable)).collectList().thenReturn(type);
+    return checkFoundRelation(
+        Mono.just(type).map(TypeDto::getBackendKeyDefinitions).flatMapMany(Flux::fromIterable)).collectList()
+        .thenReturn(type);
   }
 
-  private Flux<Void> checkFoundRelation(Flux<BasicBackendDefinitionDto> fluxDefinition){
-    return fluxDefinition.filter( def -> typesToCheck.contains(def.getType())).flatMap( definitionToCheck -> switch(definitionToCheck){
-      case RelationDefinitionDto definition -> validateRelation(definition);
-      case ObjectDefinitionDto definition && !definition.getProperties().isEmpty()->  checkFoundRelation(Flux.fromIterable(definition.getProperties()).thenMany(Flux.empty()));
-      case ArrayDefinitionDto definition && !definition.getProperties().isEmpty() -> checkFoundRelation(Flux.fromIterable(definition.getProperties())).thenMany(Flux.empty());
-      case default -> Flux.empty();
-    });
+  private Flux<Void> checkFoundRelation(Flux<BasicBackendDefinitionDto> fluxDefinition) {
+    return fluxDefinition.filter(def -> typesToCheck.contains(def.getType()))
+        .flatMap(definitionToCheck -> switch (definitionToCheck) {
+          case RelationDefinitionDto definition -> validateRelation(definition);
+          case ObjectDefinitionDto definition && !definition.getProperties().isEmpty() ->
+              checkFoundRelation(Flux.fromIterable(definition.getProperties()).thenMany(Flux.empty()));
+          case ArrayDefinitionDto definition && !definition.getProperties().isEmpty() ->
+              checkFoundRelation(Flux.fromIterable(definition.getProperties())).thenMany(Flux.empty());
+          case default -> Flux.empty();
+        });
   }
-  private Flux<Void> validateRelation(RelationDefinitionDto relation){
+
+  private Flux<Void> validateRelation(RelationDefinitionDto relation) {
     return Flux.concat(getById(UUID.fromString(relation.getReferencedTypeId()))
         .flatMap(referencedType -> {
           Optional<BasicBackendDefinitionDto> optionalKey = findDefinition(relation.getReferenceKey(),
               referencedType.getBackendKeyDefinitions());
           if (optionalKey.isEmpty()) {
-            return Mono.error(new ReferencedKeyDontExistsFromType(relation.getReferenceKey(), referencedType.getName()));
+            return Mono.error(
+                new ReferencedKeyDontExistsFromType(relation.getReferenceKey(), referencedType.getName()));
           }
           return typeDao.doesTableExist(referencedType.getName()).flatMap(doesExist -> {
             if (Boolean.FALSE.equals(doesExist)) {
@@ -89,21 +94,24 @@ public class TypeService {
   }
 
   private Optional<BasicBackendDefinitionDto> findDefinition(String key,
-      List<BasicBackendDefinitionDto> definitions){
-    Optional<BasicBackendDefinitionDto> found = definitions.stream().filter( definition -> Objects.equals(key,
+      List<BasicBackendDefinitionDto> definitions) {
+    Optional<BasicBackendDefinitionDto> found = definitions.stream().filter(definition -> Objects.equals(key,
         definition.getKey())).findFirst();
-    if(found.isEmpty()){
+    if (found.isEmpty()) {
       Optional<Optional<BasicBackendDefinitionDto>> optional =
-          definitions.stream().filter( definitionDto -> definitionDto instanceof ArrayDefinitionDto || definitionDto instanceof ObjectDefinitionDto)
-              .map( definition -> {
-                if(definition instanceof  ArrayDefinitionDto casted && Objects.nonNull(casted.getProperties()) && !casted.getProperties().isEmpty()){
+          definitions.stream().filter(definitionDto -> definitionDto instanceof ArrayDefinitionDto
+                  || definitionDto instanceof ObjectDefinitionDto)
+              .map(definition -> {
+                if (definition instanceof ArrayDefinitionDto casted && Objects.nonNull(casted.getProperties())
+                    && !casted.getProperties().isEmpty()) {
                   return casted.getProperties();
                 }
-                if(definition instanceof ObjectDefinitionDto casted && Objects.nonNull(casted.getProperties())){
+                if (definition instanceof ObjectDefinitionDto casted && Objects.nonNull(casted.getProperties())) {
                   return casted.getProperties();
                 }
                 return Collections.emptyList();
-              }).map( foundDefinitions -> findDefinition(key, (List<BasicBackendDefinitionDto>) foundDefinitions)).filter(
+              }).map(foundDefinitions -> findDefinition(key, (List<BasicBackendDefinitionDto>) foundDefinitions))
+              .filter(
                   Optional::isPresent).findFirst();
       found = optional.orElse(found);
     }

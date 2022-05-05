@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 public interface TypeRepository extends ReactiveCrudRepository<TypeEntity, UUID> {
 
   Mono<TypeEntity> findByName(String name);
+
   Mono<TypeEntity> getById(UUID id);
 
 }

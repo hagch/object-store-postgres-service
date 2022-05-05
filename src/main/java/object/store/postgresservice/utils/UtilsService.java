@@ -55,7 +55,7 @@ public record UtilsService(SQLUtils sqlUtils, SQLStatementBuilder sqlBuilder,
         .orElse(Strings.EMPTY);
   }
 
-  public Mono<Map<String, Object>> getSingleSelectResult( String type, String primaryKey,
+  public Mono<Map<String, Object>> getSingleSelectResult(String type, String primaryKey,
       String primaryValue) {
     return client.sql(sqlBuilder.selectObjectByPrimary(type, primaryKey, primaryValue).getStatement())
         .fetch()
