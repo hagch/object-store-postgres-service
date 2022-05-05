@@ -127,7 +127,7 @@ public class SQLStatementBuilder {
         .build();
   }
 
-  public SQLStatement deleteObjectByPrimaryKey(String tableName, String primaryKey, String primaryValue){
+  public SQLStatement deleteObjectByPrimaryKey(String tableName, String primaryKey, String primaryValue) {
     return new SQLStatement("DELETE FROM " + Strings.dquote(tableName) + " WHERE " + Strings.dquote(primaryKey) + " ="
         + " " + Strings.quote(primaryValue));
   }

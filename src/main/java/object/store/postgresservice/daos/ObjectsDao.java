@@ -5,25 +5,12 @@ import com.google.common.collect.Maps;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
-import object.store.gen.dbservice.models.BackendKeyType;
 import object.store.postgresservice.dtos.TypeDto;
-import object.store.postgresservice.dtos.models.BasicBackendDefinitionDto;
-import object.store.postgresservice.exceptions.CreateObjectFailed;
 import object.store.postgresservice.exceptions.DeleteObjectFailed;
 import object.store.postgresservice.exceptions.GetAllObjectsByTypeNameFailed;
-import object.store.postgresservice.exceptions.ObjectNotFound;
 import object.store.postgresservice.exceptions.UpdateObjectFailed;
-import object.store.postgresservice.services.AdditionalPropertyService;
-import object.store.postgresservice.services.TypeService;
-import object.store.postgresservice.services.builders.SQLStatementBuilder;
-import object.store.postgresservice.utils.SQLUtils;
 import object.store.postgresservice.utils.UtilsService;
-import org.apache.commons.lang3.tuple.Triple;
-import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
-import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -32,6 +19,7 @@ import reactor.util.function.Tuple3;
 
 @Service
 public record ObjectsDao(R2dbcEntityTemplate template, UtilsService utilsService) {
+
   public Mono<Map<String, Object>> insertObject(Mono<Tuple2<Map<String, Object>, TypeDto>> monoPair) {
     return utilsService.insertObject(monoPair);
   }
@@ -49,7 +37,8 @@ public record ObjectsDao(R2dbcEntityTemplate template, UtilsService utilsService
   public Flux<Map<String, Object>> getObjects(Mono<TypeDto> typeMono) {
     return typeMono
         .flatMapMany(
-            type -> utilsService.client().sql(utilsService.sqlBuilder().selectObjectsByTableName(type.getName()).getStatement()).fetch().all()
+            type -> utilsService.client()
+                .sql(utilsService.sqlBuilder().selectObjectsByTableName(type.getName()).getStatement()).fetch().all()
                 .switchIfEmpty(Mono.error(new GetAllObjectsByTypeNameFailed(type.getName())))
         )
         .map(utilsService.sqlUtils()::mapJsonObjects)
@@ -80,12 +69,13 @@ public record ObjectsDao(R2dbcEntityTemplate template, UtilsService utilsService
             .fetch().rowsUpdated()
             .flatMap(rows -> {
               if (Objects.equals(rows, 0)) {
-                return Mono.error(new UpdateObjectFailed(newObject.toString(),type.toString()));
+                return Mono.error(new UpdateObjectFailed(newObject.toString(), type.toString()));
               }
               return Mono.just(rows);
             })
             .flatMap(n -> utilsService.client().sql(
-                    utilsService.sqlBuilder().selectObjectByPrimary(type.getName(), primaryKey, primaryValue).getStatement()).fetch()
+                    utilsService.sqlBuilder().selectObjectByPrimary(type.getName(), primaryKey, primaryValue)
+                        .getStatement()).fetch()
                 .first());
       }
       return monoObject.map(utilsService.sqlUtils()::mapJsonObjects)
@@ -93,15 +83,15 @@ public record ObjectsDao(R2dbcEntityTemplate template, UtilsService utilsService
     });
   }
 
-  public Mono<Integer> deleteObject(String objectId, TypeDto typeDto){
-      return utilsService.client().sql(utilsService.sqlBuilder().deleteObjectByPrimaryKey(typeDto.getName(),
-              utilsService().getPrimaryKeyName(typeDto),objectId).getStatement())
-          .fetch().rowsUpdated().flatMap(rows -> {
-            if (Objects.equals(rows, 0)) {
-              return Mono.error(new DeleteObjectFailed(objectId));
-            }
-            return Mono.just(rows);
-          });
+  public Mono<Integer> deleteObject(String objectId, TypeDto typeDto) {
+    return utilsService.client().sql(utilsService.sqlBuilder().deleteObjectByPrimaryKey(typeDto.getName(),
+            utilsService().getPrimaryKeyName(typeDto), objectId).getStatement())
+        .fetch().rowsUpdated().flatMap(rows -> {
+          if (Objects.equals(rows, 0)) {
+            return Mono.error(new DeleteObjectFailed(objectId));
+          }
+          return Mono.just(rows);
+        });
   }
 }
 

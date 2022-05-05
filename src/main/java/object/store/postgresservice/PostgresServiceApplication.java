@@ -40,6 +40,7 @@ public class PostgresServiceApplication {
     initializer.setDatabasePopulator(resource);
     return initializer;
   }
+
   @Bean
   public ReactiveTransactionManager transactionManager(ConnectionFactory connectionFactory) {
     return new R2dbcTransactionManager(connectionFactory);

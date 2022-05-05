@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import object.store.gen.dbservice.models.BackendKeyType;
 import object.store.postgresservice.dtos.TypeDto;
 import object.store.postgresservice.dtos.models.BasicBackendDefinitionDto;
@@ -31,6 +32,7 @@ public record UtilsService(SQLUtils sqlUtils, SQLStatementBuilder sqlBuilder,
       if (type.getAdditionalProperties()) {
         additionalPropertyService.mapToAdditionalProperties(caseSensitiveObject, type);
       }
+      caseSensitiveObject.put(primaryKey, UUID.randomUUID());
       return client.sql(sqlBuilder.insertObject(caseSensitiveObject, type.getName()).getStatement())
           .fetch().rowsUpdated()
           .flatMap(rows -> {
@@ -55,7 +57,7 @@ public record UtilsService(SQLUtils sqlUtils, SQLStatementBuilder sqlBuilder,
         .orElse(Strings.EMPTY);
   }
 
-  public Mono<Map<String, Object>> getSingleSelectResult( String type, String primaryKey,
+  public Mono<Map<String, Object>> getSingleSelectResult(String type, String primaryKey,
       String primaryValue) {
     return client.sql(sqlBuilder.selectObjectByPrimary(type, primaryKey, primaryValue).getStatement())
         .fetch()

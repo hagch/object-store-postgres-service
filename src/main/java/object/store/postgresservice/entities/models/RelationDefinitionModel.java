@@ -10,7 +10,7 @@ import javax.annotation.Generated;
  */
 
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2022-04-07T16:01:04.243227802+02:00[Europe/Vienna]")
-public class RelationDefinitionModel extends BasicBackendDefinitionModel  {
+public class RelationDefinitionModel extends BasicBackendDefinitionModel {
 
   @JsonProperty("referencedTypeId")
   private String referencedTypeId;
@@ -25,6 +25,7 @@ public class RelationDefinitionModel extends BasicBackendDefinitionModel  {
 
   /**
    * Get referencedTypeId
+   *
    * @return referencedTypeId
    */
 
@@ -44,6 +45,7 @@ public class RelationDefinitionModel extends BasicBackendDefinitionModel  {
 
   /**
    * Get referenceKey
+   *
    * @return referenceKey
    */
 
@@ -87,8 +89,7 @@ public class RelationDefinitionModel extends BasicBackendDefinitionModel  {
   }
 
   /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
+   * Convert the given object to string with each line indented by 4 spaces (except the first line).
    */
   private String toIndentedString(Object o) {
     if (o == null) {

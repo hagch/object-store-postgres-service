@@ -25,9 +25,9 @@ public record ObjectsController(ObjectsService objectsService) implements Object
   @Override
   public Mono<ResponseEntity<Void>> deleteObjectByTypeIdentifier(Identifier identifierType,
       String identifier, String objectId, ServerWebExchange exchange) {
-    return switch( identifierType){
-      case IDS -> objectsService.deleteObjectByTypeId(objectId,identifier).then().map(ResponseEntity::ok);
-      case NAMES -> objectsService.deleteObjectByTypeName(objectId,identifier).then().map(ResponseEntity::ok);
+    return switch (identifierType) {
+      case IDS -> objectsService.deleteObjectByTypeId(objectId, identifier).then().map(ResponseEntity::ok);
+      case NAMES -> objectsService.deleteObjectByTypeName(objectId, identifier).then().map(ResponseEntity::ok);
     };
   }
 
