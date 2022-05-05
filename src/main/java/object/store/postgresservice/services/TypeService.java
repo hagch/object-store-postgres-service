@@ -2,6 +2,7 @@ package object.store.postgresservice.services;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import object.store.postgresservice.exceptions.GetAllTypesFailed;
 import object.store.postgresservice.exceptions.ReferencedKeyDontExistsFromType;
 import object.store.postgresservice.exceptions.TypeNotFoundById;
 import object.store.postgresservice.exceptions.TypeNotFoundByName;
+import object.store.postgresservice.exceptions.WrongTypeId;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -46,8 +48,11 @@ public class TypeService {
     return validateTypeReferences(document).flatMap(typeDao::createTableForType).flatMap(typeDao::createType);
   }
 
-  public Mono<TypeDto> updateById(TypeDto document) {
-    return validateTypeReferences(document).flatMap(typeDao::updateTypeById);
+  public Mono<TypeDto> updateType(String typeId, TypeDto document, List<Map<String,Object>> objects) {
+    if(!Objects.equals(typeId, document.getId())){
+      return Mono.error(new WrongTypeId());
+    }
+    return typeDao.updateType(document,objects);
   }
 
   public Mono<Void> delete(String id) {

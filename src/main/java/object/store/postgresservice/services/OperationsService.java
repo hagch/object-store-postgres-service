@@ -4,9 +4,6 @@ import static object.store.gen.dbservice.models.OperationDefinition.OperationTyp
 import static object.store.gen.dbservice.models.OperationDefinition.OperationTypeEnum.CREATE;
 
 import java.util.List;
-import java.util.function.Supplier;
-import javax.management.OperationsException;
-import javax.naming.OperationNotSupportedException;
 import object.store.gen.dbservice.models.CreateUpdateOperationDefinition;
 import object.store.gen.dbservice.models.DeleteOperationDefinition;
 import object.store.gen.dbservice.models.OperationDefinition;
@@ -19,7 +16,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
-public record OperationsService(ObjectsService objectsService, TypeService typeService,
+public record OperationsService(ObjectsService objectsService,
                                 TransactionalOperator transactionalOperator, ReactiveTransactionManager transactionManager) {
   public Mono<List<Object>> handleOperations(Flux<OperationDefinition> fluxOperations) {
     return fluxOperations.flatMap(operation -> switch (operation) {

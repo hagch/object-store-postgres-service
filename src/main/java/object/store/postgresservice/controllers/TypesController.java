@@ -3,6 +3,7 @@ package object.store.postgresservice.controllers;
 import java.util.UUID;
 import object.store.gen.dbservice.apis.TypesApi;
 import object.store.gen.dbservice.models.Type;
+import object.store.gen.dbservice.models.UpdateType;
 import object.store.postgresservice.mappers.TypeMapper;
 import object.store.postgresservice.services.TypeService;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +36,9 @@ public record TypesController(TypeService typeService, TypeMapper mapper) implem
   }
 
   @Override
-  public Mono<ResponseEntity<Type>> updateTypeById(String id, Mono<Type> type, ServerWebExchange exchange) {
-    return type.map(mapper::apiToDto).flatMap(typeService::updateById).map(mapper::dtoToApi).map(ResponseEntity::ok);
+  public Mono<ResponseEntity<Type>> updateType(String id, Mono<UpdateType> updateType,
+      ServerWebExchange exchange) {
+    return updateType.flatMap( typeUpdate -> typeService.updateType(id,mapper.apiToDto(typeUpdate.getType()),
+        typeUpdate.getObjects())).map(mapper::dtoToApi).map(ResponseEntity::ok);
   }
 }
