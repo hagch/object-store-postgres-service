@@ -88,7 +88,8 @@ public class SQLStatementBuilder {
   public SQLStatement insertObject(Map<String, Object> object, String typeName) {
     SQLInsertObjectBuilder builder = SQLStatement.insertObjectBuilder().name(typeName);
     for (Entry<String, Object> entry : object.entrySet()) {
-      if (entry.getValue() instanceof List<?> || entry.getValue() instanceof Map<?, ?>) {
+      if (entry.getValue() instanceof List<?> || entry.getValue() instanceof Map<?, ?> || entry.getValue().getClass()
+          .isArray()) {
         try {
           builder.jsonValue(entry.getKey(), entry.getValue());
         } catch (JsonProcessingException e) {
@@ -113,7 +114,8 @@ public class SQLStatementBuilder {
   public SQLStatement updateObjectByPrimaryKey(String tableName, String primaryKey, String primaryValue,
       Map<String, Object> newValues) {
     var mappedValues = newValues.entrySet().stream().collect(Collectors.toMap(Entry::getKey, entry -> {
-      if (entry.getValue() instanceof List<?> || entry.getValue() instanceof Map<?, ?>) {
+      if (entry.getValue() instanceof List<?> || entry.getValue() instanceof Map<?, ?> || entry.getValue().getClass()
+          .isArray()) {
         try {
           return mapper.writeValueAsString(entry.getValue());
         } catch (JsonProcessingException e) {
@@ -154,7 +156,7 @@ public class SQLStatementBuilder {
 
   private Schema getArraySchema(ArrayDefinitionDto property, boolean additionalProperties) {
     if (Objects.nonNull(property.getPrimitiveArrayType())) {
-      return StringSchema.builder().build();
+      return ArraySchema.builder().build();
     } else {
       return ArraySchema.builder().allItemSchema(getObjectSchema(property.getProperties(), additionalProperties))
           .build();

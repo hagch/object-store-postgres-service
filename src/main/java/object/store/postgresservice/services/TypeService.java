@@ -43,7 +43,7 @@ public class TypeService {
   }
 
   public Mono<TypeDto> createType(TypeDto document) {
-    return validateTypeReferences(document).flatMap(typeDao::createTableForType).flatMap(typeDao::createType);
+    return validateTypeReferences(document).flatMap(typeDao::createType).flatMap(typeDao::createTableForType);
   }
 
   public Mono<TypeDto> updateType(String typeId, TypeDto document, List<Map<String, Object>> objects) {
